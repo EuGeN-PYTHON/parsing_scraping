@@ -18,32 +18,36 @@ from pprint import pprint
 
 # 'https://hh.ru/search/vacancy?area=1&fromSearchLine=true&text=Python&from=suggest_post&page=0&hhtmFrom=vacancy_search_list'
 # https://hh.ru/search/vacancy?area=1&fromSearchLine=true&text=python
+from certifi.__main__ import args
+
+def check_count_page():
+    base_url = 'https://hh.ru'
+    search_word = input('Введите ключевое слово для поиска вакансии: ')
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36'}
+    params = {'area': 1, 'fromSearchLine': 'true', 'text': {search_word}, 'page': 0, 'hhtmFrom': 'vacancy_search_list',
+              'from': 'suggest_post', 'clusters':'true', 'ored_clusters': 'true', 'items_on_page': 20}
+    #text=python&area=1&salary=&currency_code=RUR&experience=doesNotMatter&order_by=relevance&search_period=0&items_on_page=20&no_magic=true&L_save_area=true
+    # #a11y-main-content > div:nth-child(1) > div.vacancy-serp-item-body > div.vacancy-serp-item-body__main-info
+    url = f'{base_url}/search/vacancy'
+
+    response = requests.get(url, headers=headers, params=params)
+    dom = BeautifulSoup(response.text, 'html.parser')
+
+    pager = dom.find('div', {'class': 'pager'})
+    pager_count = pager.find('a', {'data-qa': 'pager-next'}).previousSibling
+    count_page = pager_count.find('a', {'data-qa': 'pager-page'}).text
+    return search_word, base_url, url, headers, params, int(count_page)
 
 
-base_url = 'https://hh.ru'
-search_word = input('Введите ключевое слово для поиска вакансии: ')
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36'}
-params = {'area': 1, 'fromSearchLine': 'true', 'text': {search_word}, 'page': 0, 'hhtmFrom': 'vacancy_search_list',
-          'from': 'suggest_post', 'clusters':'true', 'ored_clusters': 'true'}
-# #a11y-main-content > div:nth-child(1) > div.vacancy-serp-item-body > div.vacancy-serp-item-body__main-info
-url = f'{base_url}/search/vacancy'
-
-response = requests.get(url, headers=headers, params=params)
-dom = BeautifulSoup(response.text, 'html.parser')
-
-pager = dom.find('div', {'class': 'pager'})
-pager_count = pager.find('a', {'data-qa': 'pager-next'}).previousSibling
-count_page = pager_count.find('a', {'data-qa': 'pager-page'}).text
-count_page = int(count_page)
-
-list_vacancies = []
 
 def dump_json(data, search_word):
     with open(f'{search_word}-vacancies.json', 'w', encoding='utf-8') as file:
         json.dump(data, file)
 
 def get_hh():
+    search_word, base_url, url, headers, params, count_page  = check_count_page()
+    list_vacancies = []
     for i in range(count_page):
         response = requests.get(url, headers=headers, params=params)
         dom = BeautifulSoup(response.text, 'html.parser')
@@ -59,40 +63,48 @@ def get_hh():
             one_vacancy['link'] = link
             one_vacancy['name_company'] = name_company
             one_vacancy['link_site'] = link_site
-            salary_list = []
+            # salary_list = []
             if vacancy.find('span', {'data-qa': 'vacancy-serp__vacancy-compensation'}):
                 salary = vacancy.find('span', {'data-qa': 'vacancy-serp__vacancy-compensation'}).text
                 salary = salary.split()
                 if salary[0] == 'от':
-                    salary_list.append(int(f'{salary[1]}{salary[2]}'))
-                    salary_list.append(None)
+                    one_vacancy['salary_from'] = int(f'{salary[1]}{salary[2]}')
+                    one_vacancy['salary_to'] = None
                     if salary[3] == 'руб.':
-                        salary_list.append('RUB')
+                        one_vacancy['salary_ticket'] = 'RUB'
                     else:
-                        salary_list.append(salary[3])
+                        one_vacancy['salary_ticket'] = salary[3]
                 elif salary[0] == 'до':
-                    salary_list.append(None)
-                    salary_list.append(int(f'{salary[1]}{salary[2]}'))
+                    one_vacancy['salary_from'] = None
+                    one_vacancy['salary_to'] = int(f'{salary[1]}{salary[2]}')
                     if salary[3] == 'руб.':
-                        salary_list.append('RUB')
+                        one_vacancy['salary_ticket'] = 'RUB'
                     else:
-                        salary_list.append(salary[3])
+                        one_vacancy['salary_ticket'] = salary[3]
                 else:
-                    salary_list.append(int(f'{salary[0]}{salary[1]}'))
-                    salary_list.append(int(f'{salary[3]}{salary[4]}'))
+                    one_vacancy['salary_from'] = int(f'{salary[0]}{salary[1]}')
+                    one_vacancy['salary_to'] = int(f'{salary[3]}{salary[4]}')
                     if salary[5] == 'руб.':
-                        salary_list.append('RUB')
+                        one_vacancy['salary_ticket'] = 'RUB'
                     else:
-                        salary_list.append(salary[5])
+                        one_vacancy['salary_ticket'] = salary[5]
                 # one_vacancy['salary'] = salary_list
             else:
-                salary_list.append(None)
-                salary_list.append(None)
-                salary_list.append(None)
-            one_vacancy['salary'] = salary_list
+                one_vacancy['salary_from'] = None
+                one_vacancy['salary_to'] = None
+                one_vacancy['salary_ticket'] = None
+            # one_vacancy['salary'] = salary_list
             list_vacancies.append(one_vacancy)
+            # print(list_vacancies)
+            # break
         params['page'] += 1
-    dump_json(list_vacancies, search_word)
+    return list_vacancies, search_word
+    # dump_json(list_vacancies, search_word)
+
 
 if __name__ == '__main__':
-    get_hh()
+    data, search_word = get_hh()
+    # pprint(data)
+    dump_json(data, search_word)
+
+
