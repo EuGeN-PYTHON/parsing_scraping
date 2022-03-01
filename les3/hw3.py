@@ -12,7 +12,7 @@ from pycbrf import ExchangeRates
 from pprint import pprint
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-from parsing_scraping.les2.hw2 import get_hh
+from les2.hw2 import get_hh
 
 client = MongoClient("mongodb+srv://evgeny_varlamov92:27Fifa2010@cluster0.pnfwt.mongodb.net/vacancies?retryWrites=true&w=majority")
 
@@ -41,7 +41,11 @@ def get_vacancies(currency):
     currency_euro = int(currency_euro)
     result = f"{{'$or':[{{'salary_ticket': 'RUB', 'salary_from': {{'$gte': {currency}}}}}," \
              f" {{'salary_ticket': 'USD', 'salary_from': {{'$gte': {currency_dollar}}}}}," \
-             f" {{'salary_ticket': 'EUR', 'salary_from': {{'$gte': {currency_euro}}}}}]}}"
+             f" {{'salary_ticket': 'EUR', 'salary_from': {{'$gte': {currency_euro}}}}}," \
+             f" {{'salary_ticket': 'RUB', 'salary_to': {{'$lte': {currency}}}}}," \
+             f" {{'salary_ticket': 'USD', 'salary_to': {{'$lte': {currency_dollar}}}}}," \
+             f" {{'salary_ticket': 'EUR', 'salary_to': {{'$lte': {currency_euro}}}}}]}}"
+
     result = eval(result)
     result = hh.find(result)
     try:
