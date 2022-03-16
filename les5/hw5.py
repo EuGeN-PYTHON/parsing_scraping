@@ -14,11 +14,13 @@
 Сайт можно выбрать и свой. Главный критерий выбора:
 динамически загружаемые товары
 """
+import time
 from pprint import pprint
 
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from selenium import webdriver
+from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -70,11 +72,22 @@ def load_data_to_mongodb(data, name):
         except:
             not_added_data.append(one)
 
+def scroll_to_elem(n=5):
+    """
+    Добавлено 5 scroll'ов по умолчанию
+    """
+    for i in range(n):
+        messages = chrome_driver.find_elements(By.XPATH, '//a[@class="llct llct_new llct_new-selection js-letter-list-item"]')
+        actions = ActionChains(chrome_driver)
+        actions.move_to_element(messages[-1])
+        actions.perform()
+        time.sleep(4)
+
 
 if __name__ == '__main__':
 
     log_in_mail(chrome_driver)
-    # list_elements = scroll_to_elem()
+    list_elements = scroll_to_elem()
     inbox_elements = chrome_driver.find_elements(By.XPATH, "//a[contains(@href,'/inbox/0')]")
     # inbox_elements[0].click()
     list_with_message = []
