@@ -25,6 +25,8 @@ if __name__ == '__main__':
     # threads.append(x)
     # x.start()
     # x = threading.Thread(target=crawler_process.crawl(SjruSpider), args=(2,))
+    # threads.append(x)
+    # x.start()
     # for index, thread in enumerate(threads):
     #     thread.join()
 
