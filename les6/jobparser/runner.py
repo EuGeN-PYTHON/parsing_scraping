@@ -1,3 +1,5 @@
+import threading
+
 from scrapy.crawler import CrawlerProcess
 from scrapy.settings import Settings
 
@@ -16,5 +18,14 @@ if __name__ == '__main__':
 
     crawler_process.start()
 
+    # Запуск через 2 потока
+
+    # threads = []
+    # x = threading.Thread(target=crawler_process.crawl(HhruSpider), args=(1,))
+    # threads.append(x)
+    # x.start()
+    # x = threading.Thread(target=crawler_process.crawl(SjruSpider), args=(2,))
+    # for index, thread in enumerate(threads):
+    #     thread.join()
 
 
