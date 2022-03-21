@@ -9,11 +9,12 @@ if __name__ == '__main__':
     settings_crawler = Settings()
     settings_crawler.setmodule(settings)
 
-    crawler_process = CrawlerProcess(settings=settings_crawler_one)
+    crawler_process = CrawlerProcess(settings=settings_crawler)
 
     crawler_process.crawl(HhruSpider)
     crawler_process.crawl(SjruSpider)
 
     crawler_process.start()
+
 
 
